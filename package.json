@@ -1,0 +1,21 @@
+{
+  "name": "cheese-sandwich",
+  "version": "1.0.0",
+  "description": "Discord bot for my server",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Chandrachur Mukherjee",
+  "license": "ISC",
+  "dependencies": {
+    "@discordjs/builders": "^0.6.0",
+    "@discordjs/rest": "^0.1.0-canary.0",
+    "discord-api-types": "^0.23.1",
+    "discord.js": "^13.2.0",
+    "mongoose": "^6.0.11",
+    "mongoose-long": "^0.5.0",
+    "node-fetch": "^3.0.0"
+  }
+}
