@@ -44,7 +44,7 @@ export async function lichess(interaction, existingInfo, username) {
 	const getVerifyOwnershipEmbed = function() {
 		const embed = new MessageEmbed()
 		embed.setTitle('Additional verification steps required.')
-		embed.setDescription(`In your lichess profile, please paste your Discord tag ${interaction.user.toString()} \
+		embed.setDescription(`In your lichess profile, please paste your Discord tag ${interaction.user.tag} \
 		into the Location field temporarily to verify you have ownership of the account and re-run the command.\
 		After linking your account, you can revert your Location back to any value.`)
 		embed.addField('You can set your chess.com Location here:', 'https://lichess.org/account/profile')
@@ -90,7 +90,7 @@ export async function chesscom(interaction, existingInfo, username) {
 	const getVerifyOwnershipEmbed = function() {
 		const embed = new MessageEmbed()
 		embed.setTitle('Additional verification steps required.')
-		embed.setDescription(`In your chess.com profile, please paste your Discord tag ${interaction.user.toString()} \
+		embed.setDescription(`In your chess.com profile, please paste your Discord tag ${interaction.user.tag} \
 		into the Location field temporarily to verify you have ownership of the account and re-run the command.\
 		After linking your account, you can revert your Location back to any value.`)
 		embed.addField('You can set your chess.com Location here:', 'https://www.chess.com/settings')

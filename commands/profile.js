@@ -61,7 +61,7 @@ export async function getRatings(lichessId, chesscomId) {
         
         // Chess com api sucks thus we need to make sure we have the proper response.
         let i = 0
-        while(!userData.ok && ++i < 100)
+        while((userData.status != 404) && (!userData.ok && ++i < 100))
             userData = await fetch(`https://api.chess.com/pub/player/${chesscomId}/stats`)
         if(i >= 100) {
             console.log(`Failed to get back response for chess.com user ${chesscomId}`)

@@ -1,5 +1,4 @@
 import { readdirSync } from 'fs'
-import { setInterval } from 'timers/promises'
 
 import mongoose from 'mongoose'
 import { Client, Collection } from 'discord.js'

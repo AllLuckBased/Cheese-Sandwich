@@ -15,7 +15,14 @@ export const data = new SlashCommandBuilder()
 	)
 export async function execute(interaction) {
     await interaction.deferReply()
-	let existingInfo = await members.findById(interaction.member.id).exec()
+	const existingInfo = await unlink(interaction.member)
+	const ratings = await getRatings(existingInfo.lichessId, existingInfo.chesscomId)
+	const embed = await getProfileEmbed('Profile(s) unlinked successfully.', interaction.member, existingInfo, ratings)
+    await interaction.editReply({embeds: [ embed ]})
+}
+
+export async function unlink(member) {
+	let existingInfo = await members.findById(member.id).exec()
 	if (existingInfo == null)
 		await interaction.editReply({ content: 'Unexpected error occurred! Please try again later.'})
 
@@ -29,9 +36,6 @@ export async function execute(interaction) {
         existingInfo.chesscomId = undefined
     }
 
-    await updateMember(interaction.member, existingInfo)
-
-	const ratings = await getRatings(existingInfo.lichessId, existingInfo.chesscomId)
-	const embed = await getProfileEmbed('Profile(s) unlinked successfully.', interaction.member, existingInfo, ratings)
-    await interaction.editReply({embeds: [ embed ]})
+    await updateMember(member, existingInfo)
+	return existingInfo
 }

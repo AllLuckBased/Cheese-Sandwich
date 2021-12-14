@@ -68,7 +68,7 @@ export async function execute(interaction) {
         existingInfo.serverRating = ratings[0]
         await existingInfo.save()
         
-        await interaction.member.roles.add(config.lichessRole)
+        await mention.roles.add(config.lichessRole)
         await updateRatingRole(mention, ratings)
 
         await interaction.editReply({embeds: [
@@ -90,7 +90,7 @@ export async function execute(interaction) {
         existingInfo.serverRating = ratings[0]
         await existingInfo.save()
         
-        await interaction.member.roles.add(config.chesscomRole)
+        await mention.roles.add(config.chesscomRole)
         await updateRatingRole(mention, ratings)
 
         await interaction.editReply({embeds: [

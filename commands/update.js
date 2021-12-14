@@ -43,18 +43,24 @@ export async function updateMember(member, existingInfo) {
 }
 
 export async function updateRatingRole(member, ratings) {
-    if(member.roles.cache.has(config.unratedRole))
-        await member.roles.remove(config.unratedRole)
-    for(let i = 2; i<14; i++) {
-        if(member.roles.cache.has(config.ratingRoles[i]))
-            await member.roles.remove(config.ratingRoles[i])
+    let reqRatingRole
+
+    if(ratings[0] == undefined) reqRatingRole = config.unratedRole
+    else {
+        const lowestRatingBar = config.ratingRoles[0]
+        const ratingRangeSize = config.ratingRoles[1]
+        reqRatingRole = config.ratingRoles[Math.max(0, Math.ceil((ratings[0]-lowestRatingBar +1)/ratingRangeSize)) + 2]
     }
-    if(ratings == undefined) return
-    if(ratings[0] == undefined) await member.roles.add(config.unratedRole)
-	else {
-		const lowestRatingBar = config.ratingRoles[0]
-		const ratingRangeSize = config.ratingRoles[1]
-		const reqRatingRole = config.ratingRoles[Math.max(0, Math.ceil((ratings[0]-lowestRatingBar +1)/ratingRangeSize)) + 2]
-		await member.roles.add(reqRatingRole)
-	}
+    
+    if(!member.roles.has(reqRatingRole)) {
+        if(member.roles.cache.has(config.unratedRole))
+            await member.roles.remove(config.unratedRole)
+        for(let i = 2; i<14; i++) {
+            if(member.roles.cache.has(config.ratingRoles[i]))
+                await member.roles.remove(config.ratingRoles[i])
+        }
+
+        if(ratings == undefined) return
+        await member.roles.add(reqRatingRole)
+    }
 }
