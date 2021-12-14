@@ -35,7 +35,7 @@ async function regularUpdate() {
 			} else await updateMember(member, existingInfo)
 		}
 	})
-	await updateLeaderboard()
+	await updateLeaderboard(client.guilds.cache.get(config.guildId))
 	
 	restartInterval()
 	console.log('Auto update complete')

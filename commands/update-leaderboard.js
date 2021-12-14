@@ -35,10 +35,20 @@ export async function execute(interaction) {
 }
 
 
-export async function updateLeaderboard() {
+export async function updateLeaderboard(guild = undefined) {
     let leaderboard = await members.find({serverRating: {$ne: null}}).sort({serverRating: -1})
     for(let i=0; i<leaderboard.length; i++) {
         const member = leaderboard[i]
+        if(guild != undefined) {
+            try { 
+                await guild.members.fetch(String(member._id))
+            } catch(discordAPIError) {
+                member.serverRank = null
+                member.serverRating = null
+                await member.save()
+                continue
+            }
+        }
         if(member.serverRank != i + 1) {
             member.serverRank = i + 1
             await member.save()
