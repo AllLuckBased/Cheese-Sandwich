@@ -1,7 +1,7 @@
 import { SlashCommandBuilder } from '@discordjs/builders'
 
 import config from '../config.js'
-import members from '../models/Member.js'
+import membersDB from '../models/Member.js'
 import { restartInterval } from '../index.js'
 
 export const data = new SlashCommandBuilder()
@@ -36,7 +36,7 @@ export async function execute(interaction) {
 
 
 export async function updateLeaderboard(guild = undefined) {
-    let leaderboard = await members.find({serverRating: {$ne: null}}).sort({serverRating: -1})
+    let leaderboard = await membersDB.find({serverRating: {$ne: null}}).sort({serverRating: -1})
     for(let i=0; i<leaderboard.length; i++) {
         const member = leaderboard[i]
         if(guild != undefined) {
@@ -55,7 +55,7 @@ export async function updateLeaderboard(guild = undefined) {
         }
     }
 
-    leaderboard = await members.find({serverRating: null})
+    leaderboard = await membersDB.find({serverRating: null})
     for(let i=0; i<leaderboard.length; i++) {
         const member = leaderboard[i]
         if(member.serverRank != undefined) {

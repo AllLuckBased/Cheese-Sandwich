@@ -1,8 +1,8 @@
 import { MessageEmbed } from 'discord.js'
 import { SlashCommandBuilder } from '@discordjs/builders'
 
+import membersDB from '../models/Member.js'
 import { getLastUpdated } from '../index.js'
-import members from '../models/Member.js'
 
 export const data = new SlashCommandBuilder()
 	.setName('leaderboard')
@@ -19,7 +19,7 @@ export async function execute(interaction) {
     const embed = new MessageEmbed()
     embed.setTitle(`Leaderboard:\nPage - ${page}`)
 
-    const leaderboard = await members.find({serverRank: {$ne: null}})
+    const leaderboard = await membersDB.find({serverRank: {$ne: null}})
         .sort('serverRank')
         .skip(10*(page-1))
         .limit(10)
@@ -45,7 +45,7 @@ export async function execute(interaction) {
 
 export async function getApproxRank(existingInfo) {
     if(existingInfo.serverRating == undefined) return -1
-    const leaderboard = await members.find({}).sort({serverRating: -1})
+    const leaderboard = await membersDB.find({}).sort({serverRating: -1})
     for(var i = 0; i<leaderboard.length; i++) 
         if(leaderboard[i].serverRating <= existingInfo.serverRating) 
             return i + 1

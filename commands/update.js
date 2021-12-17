@@ -1,7 +1,8 @@
+import fetch from 'node-fetch'
 import { SlashCommandBuilder } from '@discordjs/builders'
 
 import config from '../config.js'
-import members from '../models/Member.js'
+import membersDB from '../models/Member.js'
 import { getRatings, getProfileEmbed } from './profile.js'
 
 export const data = new SlashCommandBuilder()
@@ -10,7 +11,7 @@ export const data = new SlashCommandBuilder()
     
 export async function execute(interaction) {
     await interaction.deferReply()
-    const existingInfo = await members.findById(interaction.member.id).exec()
+    const existingInfo = await membersDB.findById(interaction.member.id).exec()
     if (existingInfo == null) {
 		await interaction.editReply({ content: 'Unexpected error occurred! Please try again later.', ephemeral: true })
         return
@@ -21,35 +22,40 @@ export async function execute(interaction) {
         return
     }
 
-    const ratings = await getRatings(existingInfo.lichessId, existingInfo.chesscomId)
-    existingInfo.serverRating = ratings[0]
-    await existingInfo.save()
-
-    await updateRatingRole(interaction.member, ratings)
+    await updateMember(interaction.member, existingInfo)
+    
     await interaction.editReply({embeds: [
         await getProfileEmbed('Profile updated successfully', interaction.member, existingInfo, ratings)
     ]})
 }
 
 export async function updateMember(member, existingInfo) {
-    let ratings
+    let ratings = undefined
+    
+    //Update Database.
+    if(existingInfo.chesscomId && (await fetch(`https://api.chess.com/pub/player/${existingInfo.chesscomId}/stats`)).status == 404) {
+        if(existingInfo.chesscomId != undefined) existingInfo.prevChesscom.push(existingInfo.chesscomId)
+        existingInfo.chesscomId = undefined
+    } else if(existingInfo.lichessId && (await fetch(`https://lichess.org/api/user/${existingInfo.lichessId}`)).status == 404) {
+        if(existingInfo.lichessId != undefined) existingInfo.prevLichess.push(existingInfo.lichessId)
+        existingInfo.lichessId = undefined
+    }
+    
     if(existingInfo.chesscomId || existingInfo.lichessId) {
         ratings = await getRatings(existingInfo.lichessId, existingInfo.chesscomId)
         existingInfo.serverRating = ratings[0]
     }
-
     await existingInfo.save()
-    await updateRatingRole(member, ratings)
-}
-
-export async function updateRatingRole(member, ratings) {
+    
+    // Update rating role.
     if(ratings == undefined) {
-        if(member.roles.cache.has(config.unratedRole))
-            await member.roles.remove(config.unratedRole)
+        await member.roles.remove(config.unratedRole)
         for(let i = 2; i<14; i++) {
             if(member.roles.cache.has(config.ratingRoles[i]))
                 await member.roles.remove(config.ratingRoles[i])
         }
+        await member.roles.remove(config.chesscomRole)
+        await member.roles.remove(config.lichessRole)
         return
     }
 

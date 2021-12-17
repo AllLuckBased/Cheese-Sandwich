@@ -12,7 +12,7 @@ const MemberSchema = new mongoose.Schema({
     serverRating: Number,
     serverRank: Number
 }, {
-    versionKey: false // You should be aware of the outcome after set to false
+    versionKey: false
 })
 
 export default mongoose.model('Member', MemberSchema)

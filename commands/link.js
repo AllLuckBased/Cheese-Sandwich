@@ -2,10 +2,10 @@ import fetch from 'node-fetch'
 import { MessageEmbed } from 'discord.js'
 import { SlashCommandBuilder } from '@discordjs/builders'
 
-import members from '../models/Member.js'
-import { updateRatingRole } from './update.js'
-import { getRatings, getProfileEmbed } from './profile.js'
 import config from '../config.js'
+import membersDB from '../models/Member.js'
+import { updateMember } from './update.js'
+import { getRatings, getProfileEmbed } from './profile.js'
 
 export const data = new SlashCommandBuilder()
 	.setName('link')
@@ -22,7 +22,7 @@ export const data = new SlashCommandBuilder()
 	)
 export async function execute(interaction) {
 	await interaction.deferReply()
-	const existingInfo = await members.findById(interaction.member.id).exec()
+	const existingInfo = await membersDB.findById(interaction.member.id).exec()
 	if (existingInfo == null)
 		await interaction.editReply('Unexpected error occurred! Please try again later.')
 
@@ -72,14 +72,11 @@ export async function lichess(interaction, existingInfo, username) {
 
 		if(existingInfo.lichessId != undefined) existingInfo.prevLichess.push(existingInfo.lichessId)
 	}
-	const ratings = await getRatings(username, existingInfo.chesscomId)
 	
 	existingInfo.lichessId = username
-	existingInfo.serverRating = ratings[0]
-	await existingInfo.save()
 
+	await updateMember(interaction.member, existingInfo)
 	await interaction.member.roles.add(config.lichessRole)
-	await updateRatingRole(interaction.member, ratings)
 	
 	await interaction.editReply({embeds: [
 		await getProfileEmbed('Lichess profile linked successfully', interaction.member, existingInfo, ratings)
@@ -118,14 +115,11 @@ export async function chesscom(interaction, existingInfo, username) {
 
 		if(existingInfo.chesscomId != undefined) existingInfo.prevChesscom.push(existingInfo.chesscomId)
 	}
-	const ratings = await getRatings(existingInfo.lichessId, username)
-	
+
 	existingInfo.chesscomId = username
-	existingInfo.serverRating = ratings[0]
-	await existingInfo.save()
 	
+	await updateMember(interaction.member, existingInfo)
 	await interaction.member.roles.add(config.chesscomRole)
-	await updateRatingRole(interaction.member, ratings)
 	
 	await interaction.editReply({embeds: [
 		await getProfileEmbed('Chess.com profile linked successfully!', interaction.member, existingInfo, ratings)

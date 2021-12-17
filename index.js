@@ -4,7 +4,7 @@ import mongoose from 'mongoose'
 import { Client, Collection } from 'discord.js'
 
 import config from './config.js'
-import members from './models/Member.js'
+import membersDB from './models/Member.js'
 import { updateMember } from './commands/update.js'
 import { updateLeaderboard } from './commands/update-leaderboard.js'
 
@@ -28,9 +28,11 @@ export function getLastUpdated() { return lastUpdated }
 async function regularUpdate() {
 	client.guilds.cache.get(config.guildId).members.cache.map( async member => {
 		if (!member.user.bot) {
-			let existingInfo = await members.findById(member.id).exec()
+			let existingInfo = await membersDB.findById(member.id).exec()
 			if (existingInfo == null) {
-				await members.create({ _id: member.id })
+				const memberRole = await client.guilds.cache.get(config.guildId).roles.fetch(config.memberRoleId)
+				await membersDB.create({ _id: member.id })
+				await member.roles.add(memberRole)
 				console.log(`${member.id} successfully added to the database.`)
 			} else await updateMember(member, existingInfo)
 		}
@@ -41,33 +43,21 @@ async function regularUpdate() {
 	console.log('Auto update complete')
 }
 
-client.once('ready', async () => {
-	client.guilds.cache.get(config.guildId).members.cache.map(async member => {
-		if (!member.user.bot) {
-			let existingInfo = await members.findById(member.id).exec()
-			if (existingInfo == null) {
-				await members.create({ _id: member.id })
-				console.log(`${member.id} successfully added to the database.`)
-			}
-		}
-	})
-	
-	regularUpdate()
-})
-
 export function restartInterval() {
 	lastUpdated = Date.now()
 	clearTimeout(currentInterval)
 	currentInterval = setTimeout(regularUpdate, 14400000)
 }
 
+client.once('ready', async () => { regularUpdate() })
+
 client.on('guildMemberAdd', async member => {
 	if(member.user.bot) return
 
 	const channel = await member.guild.channels.fetch(config.welcomeChannelID)
-	const existingInfo = await members.findById(member.id).exec()
+	const existingInfo = await membersDB.findById(member.id).exec()
 	if (existingInfo == null) {
-		await members.create({ _id: member.id })
+		await membersDB.create({ _id: member.id })
 		console.log(`${member.id} successfully added to the database.`)
 		await channel.send(`Welcome to Chess Sandwich <@${member.id}>. Hope you have a fun time here :)`)
 	} else {
@@ -79,9 +69,11 @@ client.on('guildMemberAdd', async member => {
 	await member.roles.add(memberRole)
 })
 
-client.on('messageCreate', message => {
-	if(message.content.substring(0, 5) == '.say ')
-		message.channel.send(message.content.substring(5))
+client.on('messageCreate', async message => {
+	if(message.content.substring(0, 5) == '.say ' && message.member.roles.cache.has(config.adminRoleId)) {
+		await message.delete()
+		await message.channel.send(message.content.substring(5))
+	}
 })
 
 client.on('interactionCreate', async interaction => {

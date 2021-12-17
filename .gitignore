@@ -4,3 +4,4 @@ node_modules
 # Ignore secret API keys
 config.js
 config1.js
+config2.js

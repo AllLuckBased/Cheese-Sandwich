@@ -2,7 +2,7 @@ import fetch from 'node-fetch'
 import { MessageEmbed } from 'discord.js'
 import { SlashCommandBuilder } from '@discordjs/builders'
 
-import members from '../models/Member.js'
+import membersDB from '../models/Member.js'
 import { getApproxRank } from './leaderboard.js'
 
 export const data = new SlashCommandBuilder()
@@ -17,7 +17,7 @@ export async function execute(interaction) {
     let mention = interaction.options.getMentionable('mention')
     if(mention == null) mention = interaction.member
     
-    const existingInfo = await members.findById(mention.id).exec()
+    const existingInfo = await membersDB.findById(mention.id).exec()
     if (existingInfo == null)
 		await interaction.editReply({ content: 'Unexpected error occurred! Please try again later.', ephemeral: true })
 
@@ -30,29 +30,31 @@ export async function execute(interaction) {
 export async function getRatings(lichessId, chesscomId) {
     let ratings = Array(7).fill('??')
     // Format[Rating, deviation(not chesscom)] : {Server, Lichess (bullet, blitz, rapid), chesscom(bullet, blitz, rapid)}
+    
     let serverRating = 0
-
     if(lichessId != undefined) {
         let userData = await fetch(`https://lichess.org/api/user/${lichessId}`)
-        const lichessData = await userData.json()
+        if(userData.status != 404) {
+            const lichessData = await userData.json()
 
-        if(lichessData.hasOwnProperty('perfs')) {
-            const timeControls = ['bullet', 'blitz', 'rapid']
-            for(let timeControl of timeControls) {
-                if(lichessData['perfs'].hasOwnProperty(timeControl)) {
-                    ratings[timeControls.indexOf(timeControl)+1] = lichessData['perfs'][timeControl]['rating']
-                    if(lichessData['perfs'][timeControl]['rd'] >= 75) {
-                        ratings[timeControls.indexOf(timeControl)+1] = ratings[timeControls.indexOf(timeControl)+1] + '?'
-                        if(lichessData['perfs'][timeControl]['rd'] >= 110)
+            if(lichessData.hasOwnProperty('perfs')) {
+                const timeControls = ['bullet', 'blitz', 'rapid']
+                for(let timeControl of timeControls) {
+                    if(lichessData['perfs'].hasOwnProperty(timeControl)) {
+                        ratings[timeControls.indexOf(timeControl)+1] = lichessData['perfs'][timeControl]['rating']
+                        if(lichessData['perfs'][timeControl]['rd'] >= 75) {
                             ratings[timeControls.indexOf(timeControl)+1] = ratings[timeControls.indexOf(timeControl)+1] + '?'
+                            if(lichessData['perfs'][timeControl]['rd'] >= 110)
+                                ratings[timeControls.indexOf(timeControl)+1] = ratings[timeControls.indexOf(timeControl)+1] + '?'
+                        }
                     }
                 }
-            }
 
-            for(let timeControl of ['blitz', 'rapid'])
-                if(lichessData['perfs'].hasOwnProperty(timeControl) && lichessData['perfs'][timeControl]['games'] >= 20 &&
-                lichessData['perfs'][timeControl]['rd'] < 110 && lichessData['perfs'][timeControl]['rating'] > serverRating)
-                    serverRating = lichessData['perfs'][timeControl]['rating']
+                for(let timeControl of ['blitz', 'rapid'])
+                    if(lichessData['perfs'].hasOwnProperty(timeControl) && lichessData['perfs'][timeControl]['games'] >= 20 &&
+                    lichessData['perfs'][timeControl]['rd'] < 110 && lichessData['perfs'][timeControl]['rating'] > serverRating)
+                        serverRating = lichessData['perfs'][timeControl]['rating']
+            }
         }
     }
 
@@ -61,7 +63,7 @@ export async function getRatings(lichessId, chesscomId) {
         
         // Chess com api sucks thus we need to make sure we have the proper response.
         let i = 0
-        while((userData.status != 404) && (!userData.ok && ++i < 100))
+        while(userData.status != 404 && !userData.ok && ++i < 100)
             userData = await fetch(`https://api.chess.com/pub/player/${chesscomId}/stats`)
         if(i >= 100) {
             console.log(`Failed to get back response for chess.com user ${chesscomId}`)
@@ -69,29 +71,30 @@ export async function getRatings(lichessId, chesscomId) {
             ratings[0] = serverRating
             return ratings
         }
+        if(userData.status != 404) {
+            const chesscomData = await userData.json()
 
-        const chesscomData = await userData.json()
-
-        const timeControls = ['chess_bullet', 'chess_blitz', 'chess_rapid']
-        for(let timeControl of timeControls) {
-            if(chesscomData.hasOwnProperty(timeControl)) {
-                ratings[timeControls.indexOf(timeControl)+4] = chesscomData[timeControl]['last']['rating']
-                if(chesscomData[timeControl]['last']['rd'] >= 75) {
-                    ratings[timeControls.indexOf(timeControl)+4] = ratings[timeControls.indexOf(timeControl)+4] + '?'
-                    if(chesscomData[timeControl]['last']['rd'] >= 110) 
+            const timeControls = ['chess_bullet', 'chess_blitz', 'chess_rapid']
+            for(let timeControl of timeControls) {
+                if(chesscomData.hasOwnProperty(timeControl)) {
+                    ratings[timeControls.indexOf(timeControl)+4] = chesscomData[timeControl]['last']['rating']
+                    if(chesscomData[timeControl]['last']['rd'] >= 75) {
                         ratings[timeControls.indexOf(timeControl)+4] = ratings[timeControls.indexOf(timeControl)+4] + '?'
+                        if(chesscomData[timeControl]['last']['rd'] >= 110) 
+                            ratings[timeControls.indexOf(timeControl)+4] = ratings[timeControls.indexOf(timeControl)+4] + '?'
+                    }
                 }
             }
-        }
 
-        for(let timeControl of ['chess_blitz', 'chess_rapid']) {
-            if(!(chesscomData.hasOwnProperty(timeControl) && chesscomData[timeControl].hasOwnProperty('record') &&
-            chesscomData[timeControl].hasOwnProperty('last'))) continue
+            for(let timeControl of ['chess_blitz', 'chess_rapid']) {
+                if(!(chesscomData.hasOwnProperty(timeControl) && chesscomData[timeControl].hasOwnProperty('record') &&
+                chesscomData[timeControl].hasOwnProperty('last'))) continue
 
-            const record = chesscomData[timeControl]['record']
-            if(chesscomData.hasOwnProperty(timeControl) && (record['win'] + record['draw'] + record['loss']) >= 20 &&
-            chesscomData[timeControl]['last']['rd'] < 110 && (0.75 * (chesscomData[timeControl]['last']['rating']) + 650) > serverRating)
-                serverRating = 0.75 * (chesscomData[timeControl]['last']['rating']) + 650
+                const record = chesscomData[timeControl]['record']
+                if(chesscomData.hasOwnProperty(timeControl) && (record['win'] + record['draw'] + record['loss']) >= 20 &&
+                chesscomData[timeControl]['last']['rd'] < 110 && (0.75 * (chesscomData[timeControl]['last']['rating']) + 650) > serverRating)
+                    serverRating = 0.75 * (chesscomData[timeControl]['last']['rating']) + 650
+            }
         }
     }
 
@@ -102,16 +105,15 @@ export async function getRatings(lichessId, chesscomId) {
 
 export async function getProfileEmbed(header, member, existingInfo, ratings) {
     const embed = new MessageEmbed()
+    embed.setThumbnail(member.user.displayAvatarURL())
 
     if(existingInfo.lichessId == undefined && existingInfo.chesscomId == undefined) {
-        embed.setAuthor("No account found!")
-        embed.setThumbnail(member.user.displayAvatarURL())
+        embed.setAuthor("No account found!")    
         embed.setDescription("User has not linked any account on this server. Use /link to link an account.")
         return embed
     }
 
     embed.setAuthor(header)
-    embed.setThumbnail(member.user.displayAvatarURL())
 
     let title = `${member.user.tag} \nRating: ${ratings[0] == undefined? '??' : ratings[0]}`
     if(ratings[0] != undefined && existingInfo.serverRank == undefined) existingInfo.serverRank = await getApproxRank(existingInfo)
