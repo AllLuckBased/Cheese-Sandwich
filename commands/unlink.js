@@ -1,5 +1,6 @@
 import { SlashCommandBuilder } from '@discordjs/builders'
 
+import config from '../config.js'
 import { updateMember } from './update.js'
 import membersDB from '../models/Member.js'
 import { getProfileEmbed, getRatings } from './profile.js'
@@ -16,23 +17,26 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction) {
     await interaction.deferReply()
 
-	let existingInfo = await membersDB.findById(member.id).exec()
+	let existingInfo = await membersDB.findById(interaction.member.id).exec()
 	if (existingInfo == null)
 		await interaction.editReply({ content: 'Unexpected error occurred! Please try again later.'})
 
 	const website = interaction.options.getString('website')
     if(website == null || website == 'lichess') {
-        if(existingInfo.lichessId != undefined) existingInfo.prevLichess.push(existingInfo.lichessId)
+        if(existingInfo.lichessId != undefined && existingInfo.prevLichess.indexOf(existingInfo.lichessId) > -1) 
+			existingInfo.prevLichess.push(existingInfo.lichessId)
         existingInfo.lichessId = undefined
+		await interaction.member.roles.remove(config.lichessRole)
     }
     if(website == null || website == 'chesscom') {
-        if(existingInfo.chesscomId != undefined) existingInfo.prevChesscom.push(existingInfo.chesscomId)
+        if(existingInfo.chesscomId != undefined && existingInfo.prevLichess.indexOf(existingInfo.chesscomId) > -1) 
+			existingInfo.prevChesscom.push(existingInfo.chesscomId)
         existingInfo.chesscomId = undefined
+		await interaction.member.roles.remove(config.chesscomRole)
     }
 
-    await updateMember(member, existingInfo)
-
-	const ratings = await getRatings(existingInfo.lichessId, existingInfo.chesscomId)
-	const embed = await getProfileEmbed('Profile(s) unlinked successfully.', interaction.member, existingInfo, ratings)
-    await interaction.editReply({embeds: [ embed ]})
+    const ratings = await updateMember(interaction.member, existingInfo)
+    await interaction.editReply({embeds: [ 
+		await getProfileEmbed('Profile(s) unlinked successfully.', interaction.member, existingInfo, ratings)
+	 ]})
 }

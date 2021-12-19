@@ -34,10 +34,10 @@ export async function updateMember(member, existingInfo) {
     
     //Update Database.
     if(existingInfo.chesscomId && (await fetch(`https://api.chess.com/pub/player/${existingInfo.chesscomId}/stats`)).status == 404) {
-        if(existingInfo.chesscomId != undefined) existingInfo.prevChesscom.push(existingInfo.chesscomId)
+        if(existingInfo.prevChesscom.indexOf(chesscomId) > -1) existingInfo.prevChesscom.push(existingInfo.chesscomId)
         existingInfo.chesscomId = undefined
     } else if(existingInfo.lichessId && (await fetch(`https://lichess.org/api/user/${existingInfo.lichessId}`)).status == 404) {
-        if(existingInfo.lichessId != undefined) existingInfo.prevLichess.push(existingInfo.lichessId)
+        if(existingInfo.prevLichess.indexOf(lichessId) > -1) existingInfo.prevLichess.push(existingInfo.lichessId)
         existingInfo.lichessId = undefined
     }
     
@@ -56,7 +56,7 @@ export async function updateMember(member, existingInfo) {
         }
         await member.roles.remove(config.chesscomRole)
         await member.roles.remove(config.lichessRole)
-        return
+        return ratings
     }
 
     let reqRatingRole
@@ -76,4 +76,6 @@ export async function updateMember(member, existingInfo) {
         }
         await member.roles.add(reqRatingRole)
     }
+
+    return ratings
 }

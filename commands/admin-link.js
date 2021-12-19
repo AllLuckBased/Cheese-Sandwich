@@ -61,11 +61,12 @@ export async function execute(interaction) {
         }
 
         userData = await userData.json()
-        if(existingInfo.lichessId != undefined) existingInfo.prevLichess.push(existingInfo.lichessId)
+        if(existingInfo.lichessId != undefined && existingInfo.prevLichess.indexOf(lichessId) > -1) 
+            existingInfo.prevLichess.push(existingInfo.lichessId)
         existingInfo.lichessId = username
         
-        await updateMember(mention, existingInfo)
-        await mention.roles.add(config.lichessRole)
+        const ratings = await updateMember(mention, existingInfo)
+	    await mention.roles.add(config.lichessRole)
 
         await interaction.editReply({embeds: [
             await getProfileEmbed('Lichess profile linked successfully', mention, existingInfo, ratings)
@@ -79,11 +80,12 @@ export async function execute(interaction) {
 
         userData = await userData.json()
 
-        if(existingInfo.chesscomId != undefined) existingInfo.prevChesscom.push(existingInfo.chesscomId)
+        if(existingInfo.chesscomId != undefined && existingInfo.prevChesscom.indexOf(chesscomId) > -1) 
+            existingInfo.prevChesscom.push(existingInfo.chesscomId)
         existingInfo.chesscomId = username
         
-        await updateRatingRole(mention, existingInfo)
-        await mention.roles.add(config.chesscomRole)
+        const ratings = await updateMember(mention, existingInfo)
+	    await mention.roles.add(config.chesscomRole)
 
         await interaction.editReply({embeds: [
             await getProfileEmbed('Chess.com profile linked successfully!', mention, existingInfo, ratings)
