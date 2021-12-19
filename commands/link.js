@@ -79,7 +79,7 @@ export async function lichess(interaction, existingInfo, username) {
 	await interaction.member.roles.add(config.lichessRole)
 	
 	await interaction.editReply({embeds: [
-		await getProfileEmbed('Lichess profile linked successfully', interaction.member, existingInfo, ratings)
+		await getProfileEmbed('Lichess profile linked successfully', interaction.member, existingInfo, getRatings(existingInfo.lichessId, existingInfo.chesscomId))
 	]})
 }
 
@@ -122,6 +122,6 @@ export async function chesscom(interaction, existingInfo, username) {
 	await interaction.member.roles.add(config.chesscomRole)
 	
 	await interaction.editReply({embeds: [
-		await getProfileEmbed('Chess.com profile linked successfully!', interaction.member, existingInfo, ratings)
+		await getProfileEmbed('Chess.com profile linked successfully!', interaction.member, existingInfo, getRatings(existingInfo.lichessId, existingInfo.chesscomId))
 	]})
 }
