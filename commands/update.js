@@ -22,7 +22,7 @@ export async function execute(interaction) {
         return
     }
 
-    await updateMember(interaction.member, existingInfo)
+    const ratings = await updateMember(interaction.member, existingInfo)
     
     await interaction.editReply({embeds: [
         await getProfileEmbed('Profile updated successfully', interaction.member, existingInfo, ratings)
