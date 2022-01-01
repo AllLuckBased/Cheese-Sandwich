@@ -7,17 +7,22 @@ import { getLastUpdated } from '../index.js'
 export const data = new SlashCommandBuilder()
 	.setName('leaderboard')
 	.setDescription('Displays the server chess leaderboard.')
-    .addNumberOption(option => option.setName('page')
+    .addIntegerOption(option => option.setName('page')
         .setDescription('Which page of the leaderboard. 1 page = 10 members.')
         .setRequired(false)
     )
 export async function execute(interaction) {
     await interaction.deferReply()
-    let page = interaction.options.getNumber('page')
+    let page = interaction.options.getInteger('page')
     if(page == null) page = 1
     
     const embed = new MessageEmbed()
     embed.setTitle(`Leaderboard:\nPage - ${page}`)
+    if(page < 1) {
+        embed.setDescription("Error: page ∉ ℕ")
+        await interaction.editReply({embeds: [embed]})
+        return
+    }
 
     const leaderboard = await membersDB.find({serverRank: {$ne: null}})
         .sort('serverRank')
