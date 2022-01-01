@@ -27,34 +27,48 @@ export async function execute(interaction) {
     ]})
 }
 
+/** 
+ * Takes a user's lichessId & chesscomId to return his bullet, blitz and rapid rating & ultimately overall server rating:
+ * Format: Array[ServerRating, lichess bullet, lichess blitz, lichess rapid, chesscom bullet, chesscom blitz, chesscom rapid]
+ * --> If user does not have a rating for any time control that will contain as '??' in the array.
+ * --> If rd > 75 there will be 1 '?' appended to the rating while if rd > 110 there will be 2 ? appended to the rating.
+ * --> If rd > 110 that rating will not contribute in the calculation for overall server rating.
+ * --> If error was encountered while fetching data this returns undefined.
+*/
 export async function getRatings(lichessId, chesscomId) {
     let ratings = Array(7).fill('??')
-    // Format[Rating, deviation(not chesscom)] : {Server, Lichess (bullet, blitz, rapid), chesscom(bullet, blitz, rapid)}
     
     let serverRating = 0
     if(lichessId != undefined) {
         let userData = await fetch(`https://lichess.org/api/user/${lichessId}`)
-        if(userData.status != 404) {
-            const lichessData = await userData.json()
+        if(!userData.ok) {
+            console.log(userData.status + "error occurred while fetching lichess userdata for" + lichessId)
+            return undefined
+        }
+        try {
+            var lichessData = await userData.json()
+        } catch (e) {
+            console.log("Lichess JSON conversion error occurred on id" + lichessId + "/n" + e)
+            return undefined
+        }
 
-            if(lichessData.hasOwnProperty('perfs')) {
-                const timeControls = ['bullet', 'blitz', 'rapid']
-                for(let timeControl of timeControls) {
-                    if(lichessData['perfs'].hasOwnProperty(timeControl)) {
-                        ratings[timeControls.indexOf(timeControl)+1] = lichessData['perfs'][timeControl]['rating']
-                        if(lichessData['perfs'][timeControl]['rd'] >= 75) {
+        if(lichessData.hasOwnProperty('perfs')) {
+            const timeControls = ['bullet', 'blitz', 'rapid']
+            for(let timeControl of timeControls) {
+                if(lichessData['perfs'].hasOwnProperty(timeControl)) {
+                    ratings[timeControls.indexOf(timeControl)+1] = lichessData['perfs'][timeControl]['rating']
+                    if(lichessData['perfs'][timeControl]['rd'] >= 75) {
+                        ratings[timeControls.indexOf(timeControl)+1] = ratings[timeControls.indexOf(timeControl)+1] + '?'
+                        if(lichessData['perfs'][timeControl]['rd'] >= 110)
                             ratings[timeControls.indexOf(timeControl)+1] = ratings[timeControls.indexOf(timeControl)+1] + '?'
-                            if(lichessData['perfs'][timeControl]['rd'] >= 110)
-                                ratings[timeControls.indexOf(timeControl)+1] = ratings[timeControls.indexOf(timeControl)+1] + '?'
-                        }
                     }
                 }
-
-                for(let timeControl of ['blitz', 'rapid'])
-                    if(lichessData['perfs'].hasOwnProperty(timeControl) && lichessData['perfs'][timeControl]['games'] >= 20 &&
-                    lichessData['perfs'][timeControl]['rd'] < 110 && lichessData['perfs'][timeControl]['rating'] > serverRating)
-                        serverRating = lichessData['perfs'][timeControl]['rating']
             }
+
+            for(let timeControl of ['blitz', 'rapid'])
+                if(lichessData['perfs'].hasOwnProperty(timeControl) && lichessData['perfs'][timeControl]['games'] >= 20 &&
+                lichessData['perfs'][timeControl]['rd'] < 110 && lichessData['perfs'][timeControl]['rating'] > serverRating)
+                    serverRating = lichessData['perfs'][timeControl]['rating']
         }
     }
 
@@ -63,38 +77,40 @@ export async function getRatings(lichessId, chesscomId) {
         
         // Chess com api sucks thus we need to make sure we have the proper response.
         let i = 0
-        while(userData.status != 404 && !userData.ok && ++i < 100)
+        while(!userData.ok && ++i < 100)
             userData = await fetch(`https://api.chess.com/pub/player/${chesscomId}/stats`)
         if(i >= 100) {
             console.log(`Failed to get back response for chess.com user ${chesscomId}`)
-            if(serverRating == 0) serverRating = undefined
-            ratings[0] = serverRating
-            return ratings
+            return undefined
         }
-        if(userData.status != 404) {
-            const chesscomData = await userData.json()
+        
+        try {
+            var chesscomData = await userData.json()
+        } catch (e) {
+            console.log("Chesscom JSON conversion error occurred on id" + chesscomId + "/n" + e)
+            return undefined
+        }
 
-            const timeControls = ['chess_bullet', 'chess_blitz', 'chess_rapid']
-            for(let timeControl of timeControls) {
-                if(chesscomData.hasOwnProperty(timeControl)) {
-                    ratings[timeControls.indexOf(timeControl)+4] = chesscomData[timeControl]['last']['rating']
-                    if(chesscomData[timeControl]['last']['rd'] >= 75) {
+        const timeControls = ['chess_bullet', 'chess_blitz', 'chess_rapid']
+        for(let timeControl of timeControls) {
+            if(chesscomData.hasOwnProperty(timeControl)) {
+                ratings[timeControls.indexOf(timeControl)+4] = chesscomData[timeControl]['last']['rating']
+                if(chesscomData[timeControl]['last']['rd'] >= 75) {
+                    ratings[timeControls.indexOf(timeControl)+4] = ratings[timeControls.indexOf(timeControl)+4] + '?'
+                    if(chesscomData[timeControl]['last']['rd'] >= 110) 
                         ratings[timeControls.indexOf(timeControl)+4] = ratings[timeControls.indexOf(timeControl)+4] + '?'
-                        if(chesscomData[timeControl]['last']['rd'] >= 110) 
-                            ratings[timeControls.indexOf(timeControl)+4] = ratings[timeControls.indexOf(timeControl)+4] + '?'
-                    }
                 }
             }
+        }
 
-            for(let timeControl of ['chess_blitz', 'chess_rapid']) {
-                if(!(chesscomData.hasOwnProperty(timeControl) && chesscomData[timeControl].hasOwnProperty('record') &&
-                chesscomData[timeControl].hasOwnProperty('last'))) continue
+        for(let timeControl of ['chess_blitz', 'chess_rapid']) {
+            if(!(chesscomData.hasOwnProperty(timeControl) && chesscomData[timeControl].hasOwnProperty('record') &&
+            chesscomData[timeControl].hasOwnProperty('last'))) continue
 
-                const record = chesscomData[timeControl]['record']
-                if(chesscomData.hasOwnProperty(timeControl) && (record['win'] + record['draw'] + record['loss']) >= 20 &&
-                chesscomData[timeControl]['last']['rd'] < 110 && (0.75 * (chesscomData[timeControl]['last']['rating']) + 650) > serverRating)
-                    serverRating = 0.75 * (chesscomData[timeControl]['last']['rating']) + 650
-            }
+            const record = chesscomData[timeControl]['record']
+            if(chesscomData.hasOwnProperty(timeControl) && (record['win'] + record['draw'] + record['loss']) >= 20 &&
+            chesscomData[timeControl]['last']['rd'] < 110 && (0.75 * (chesscomData[timeControl]['last']['rating']) + 650) > serverRating)
+                serverRating = 0.75 * (chesscomData[timeControl]['last']['rating']) + 650
         }
     }
 
@@ -105,6 +121,11 @@ export async function getRatings(lichessId, chesscomId) {
 
 export async function getProfileEmbed(header, member, existingInfo, ratings) {
     const embed = new MessageEmbed()
+    if(ratings == undefined) {
+        embed.setAuthor("Error")    
+        embed.setDescription("Could not fetch ratings due to bad response from lichess/chesscom servers!")
+        return embed
+    }
     embed.setThumbnail(member.user.displayAvatarURL())
 
     if(existingInfo.lichessId == undefined && existingInfo.chesscomId == undefined) {

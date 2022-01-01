@@ -29,6 +29,7 @@ export async function execute(interaction) {
     ]})
 }
 
+// Return value could be normal ratings array OR undefined.
 export async function updateMember(member, existingInfo) {
     let ratings = undefined
     
@@ -43,10 +44,10 @@ export async function updateMember(member, existingInfo) {
     
     if(existingInfo.chesscomId || existingInfo.lichessId) {
         ratings = await getRatings(existingInfo.lichessId, existingInfo.chesscomId)
-        existingInfo.serverRating = ratings[0]
+        if(ratings != undefined) existingInfo.serverRating = ratings[0]
     }
     await existingInfo.save()
-    
+
     // Update rating role.
     if(ratings == undefined) {
         await member.roles.remove(config.unratedRole)

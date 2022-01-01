@@ -5,7 +5,7 @@ import { SlashCommandBuilder } from '@discordjs/builders'
 import config from '../config.js'
 import membersDB from '../models/Member.js'
 import { updateMember } from './update.js'
-import { getRatings, getProfileEmbed } from './profile.js'
+import { getProfileEmbed } from './profile.js'
 
 export const data = new SlashCommandBuilder()
 	.setName('link')

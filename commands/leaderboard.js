@@ -7,13 +7,13 @@ import { getLastUpdated } from '../index.js'
 export const data = new SlashCommandBuilder()
 	.setName('leaderboard')
 	.setDescription('Displays the server chess leaderboard.')
-    .addStringOption(option => option.setName('page')
+    .addNumberOption(option => option.setName('page')
         .setDescription('Which page of the leaderboard. 1 page = 10 members.')
         .setRequired(false)
     )
 export async function execute(interaction) {
     await interaction.deferReply()
-    let page = interaction.options.getString('page')
+    let page = interaction.options.getNumber('page')
     if(page == null) page = 1
     
     const embed = new MessageEmbed()
