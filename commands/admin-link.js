@@ -66,7 +66,6 @@ export async function execute(interaction) {
         existingInfo.lichessId = username
         
         const ratings = await updateMember(mention, existingInfo)
-	    await mention.roles.add(config.lichessRole)
 
         await interaction.editReply({embeds: [
             await getProfileEmbed('Lichess profile linked successfully', mention, existingInfo, ratings)
@@ -85,7 +84,6 @@ export async function execute(interaction) {
         existingInfo.chesscomId = username
         
         const ratings = await updateMember(mention, existingInfo)
-	    await mention.roles.add(config.chesscomRole)
 
         await interaction.editReply({embeds: [
             await getProfileEmbed('Chess.com profile linked successfully!', mention, existingInfo, ratings)

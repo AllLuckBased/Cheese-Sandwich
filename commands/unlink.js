@@ -26,13 +26,11 @@ export async function execute(interaction) {
         if(existingInfo.lichessId != undefined && existingInfo.prevLichess.indexOf(existingInfo.lichessId) > -1) 
 			existingInfo.prevLichess.push(existingInfo.lichessId)
         existingInfo.lichessId = undefined
-		await interaction.member.roles.remove(config.lichessRole)
     }
     if(website == null || website == 'chesscom') {
-        if(existingInfo.chesscomId != undefined && existingInfo.prevLichess.indexOf(existingInfo.chesscomId) > -1) 
+        if(existingInfo.chesscomId != undefined && existingInfo.prevChesscom.indexOf(existingInfo.chesscomId) > -1) 
 			existingInfo.prevChesscom.push(existingInfo.chesscomId)
         existingInfo.chesscomId = undefined
-		await interaction.member.roles.remove(config.chesscomRole)
     }
 
     const ratings = await updateMember(interaction.member, existingInfo)

@@ -42,24 +42,28 @@ export async function updateMember(member, existingInfo) {
         existingInfo.lichessId = undefined
     }
     
+    if(existingInfo.lichessId && !member.roles.cache.has(config.lichessRole)) await member.roles.add(config.lichessRole)
+    else if(!existingInfo.lichessId && member.roles.cache.has(config.lichessRole)) await member.roles.remove(config.lichessRole)
+    if(existingInfo.chesscomId && !member.roles.cache.has(config.chesscomRole)) await member.roles.add(config.chesscomRole)
+    else if(!existingInfo.chesscomId && member.roles.cache.has(config.chesscomRole)) await member.roles.remove(config.chesscomRole)
+
     if(existingInfo.chesscomId || existingInfo.lichessId) {
         ratings = await getRatings(existingInfo.lichessId, existingInfo.chesscomId)
         if(ratings != undefined) existingInfo.serverRating = ratings[0]
-    }
-    await existingInfo.save()
-
-    // Update rating role.
-    if(ratings == undefined) {
-        await member.roles.remove(config.unratedRole)
+    } else {
+        if(member.roles.cache.has(config.unratedRole))
+            await member.roles.remove(config.unratedRole)
         for(let i = 2; i<14; i++) {
             if(member.roles.cache.has(config.ratingRoles[i]))
                 await member.roles.remove(config.ratingRoles[i])
         }
-        await member.roles.remove(config.chesscomRole)
-        await member.roles.remove(config.lichessRole)
-        return ratings
+        await existingInfo.save()
+        return []
     }
-
+    await existingInfo.save()
+    if(ratings == undefined) return ratings
+    
+    // Update rating role.
     let reqRatingRole
     if(ratings[0] == undefined) reqRatingRole = config.unratedRole
     else {
