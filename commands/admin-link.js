@@ -44,9 +44,14 @@ export async function execute(interaction) {
     const username = interaction.options.getString('username')
     const mention = interaction.options.getMentionable('mention')
 
+    if(mention.user == undefined) {
+        await interaction.editReply({ content: 'Stop trying to mess with me you BAKA!', ephemeral: true })
+        return
+    }
+
     const existingInfo = await membersDB.findById(mention.user.id).exec()
     if (existingInfo == null) {
-        await interaction.editReply({ content: 'Unexpected error occurred! Please try again later.'})
+        await interaction.editReply({ content: 'Unexpected error occurred! Please try again later.', ephemeral: true})
         return
     }
 

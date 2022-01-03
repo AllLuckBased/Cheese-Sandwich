@@ -16,6 +16,11 @@ export async function execute(interaction) {
     await interaction.deferReply()
     let mention = interaction.options.getMentionable('mention')
     if(mention == null) mention = interaction.member
+
+    if(mention.user == undefined) {
+        await interaction.editReply({ content: 'Stop trying to mess with me you BAKA!', ephemeral: true })
+        return
+    }
     
     const existingInfo = await membersDB.findById(mention.id).exec()
     if (existingInfo == null) {
