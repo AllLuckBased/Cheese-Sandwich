@@ -45,8 +45,10 @@ export async function execute(interaction) {
     const mention = interaction.options.getMentionable('mention')
 
     const existingInfo = await membersDB.findById(mention.user.id).exec()
-    if (existingInfo == null)
+    if (existingInfo == null) {
         await interaction.editReply({ content: 'Unexpected error occurred! Please try again later.'})
+        return
+    }
 
     if ((website == 'lichess' && existingInfo.lichessId == username) || existingInfo.chesscomId == username) {
         await interaction.editReply({ content: 'Account is already linked!'})

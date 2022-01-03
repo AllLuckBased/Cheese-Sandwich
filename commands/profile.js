@@ -18,8 +18,10 @@ export async function execute(interaction) {
     if(mention == null) mention = interaction.member
     
     const existingInfo = await membersDB.findById(mention.id).exec()
-    if (existingInfo == null)
-		await interaction.editReply({ content: 'Unexpected error occurred! Please try again later.', ephemeral: true })
+    if (existingInfo == null) {
+        await interaction.editReply({ content: 'Unexpected error occurred! Please try again later.', ephemeral: true })
+        return
+    }
 
     const ratings = await getRatings(existingInfo.lichessId, existingInfo.chesscomId)
 	await interaction.editReply({embeds: [

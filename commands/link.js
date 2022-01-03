@@ -23,8 +23,10 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction) {
 	await interaction.deferReply()
 	const existingInfo = await membersDB.findById(interaction.member.id).exec()
-	if (existingInfo == null)
+	if (existingInfo == null) {
 		await interaction.editReply('Unexpected error occurred! Please try again later.')
+		return
+	}
 
 	const website = interaction.options.getString('website')
 	const username = interaction.options.getString('username')
