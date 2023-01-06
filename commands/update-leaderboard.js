@@ -1,32 +1,19 @@
 import { SlashCommandBuilder } from '@discordjs/builders'
 
-import config from '../config.js'
 import membersDB from '../models/Member.js'
-import { restartInterval } from '../index.js'
+
+export let currentInterval, lastUpdated
+export function restartInterval() {
+	lastUpdated = Date.now()
+	clearTimeout(currentInterval)
+    import(`../index.js`).then(data => setTimeout(data.regularUpdate, 14400000))
+}
 
 export const data = new SlashCommandBuilder()
 	.setName('update-leaderboard')
 	.setDescription('Updates the leaderboard. Will run once everyday automatically.')
-    .setDefaultPermission(false)
-export const getPerms = client => {
-    return [
-        {
-            id: client.guilds.cache.get(config.guildId).ownerId,
-            type: 'USER',
-            permission: true,
-        },
-        {
-            id: (client.guilds.cache.get(config.guildId).roles.cache.find(r => r.name == 'Admin')).id.toString(),
-            type: 'ROLE',
-            permission: true,
-        },
-        {
-            id: (client.guilds.cache.get(config.guildId).roles.cache.find(r => r.name == 'Moderator')).id.toString(),
-            type: 'ROLE',
-            permission: true,
-        },
-    ]
-}
+    .setDefaultMemberPermissions(0)
+
 export async function execute(interaction) {
     await interaction.deferReply()
     updateLeaderboard()

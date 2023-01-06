@@ -6,14 +6,13 @@ import { Client, Collection } from 'discord.js'
 import config from './config.js'
 import membersDB from './models/Member.js'
 import { updateMember } from './commands/update.js'
-import { updateLeaderboard } from './commands/update-leaderboard.js'
+import { restartInterval, updateLeaderboard } from './commands/update-leaderboard.js'
 
-const client = new Client({ intents: ['GUILDS', 'GUILD_MEMBERS', 'GUILD_BANS', 'GUILD_EMOJIS_AND_STICKERS',
-	'GUILD_INTEGRATIONS', 'GUILD_WEBHOOKS', 'GUILD_INVITES', 'GUILD_VOICE_STATES', 'GUILD_PRESENCES', 'GUILD_MESSAGES',
-	'GUILD_MESSAGE_REACTIONS', 'GUILD_MESSAGE_TYPING']} )
+const client = new Client({ intents: 515 })
 client.commands = new Collection()
 
 const dbURI = `mongodb+srv://${config.mongoDB_uname}:${config.mongoDB_pwd}@cluster0.oovjw.mongodb.net/${config.mongoDB_namespace}?retryWrites=true&w=majority`
+mongoose.set('strictQuery', true)
 mongoose.connect(dbURI, {useNewUrlParser: true, useUnifiedTopology: true})
    	.then(() => console.log('Connected Successfully!'))
 	.catch((err) => console.log(err))
@@ -22,10 +21,7 @@ const commandFiles = readdirSync('./commands').filter(file => file.endsWith('.js
 for (const file of commandFiles)
 	import(`./commands/${file}`).then(command => client.commands.set(command.data.name, command))
 
-let currentInterval, lastUpdated
-export function getLastUpdated() { return lastUpdated }
-
-async function regularUpdate() {
+export async function regularUpdate() {
 	client.guilds.cache.get(config.guildId).members.cache.map( async member => {
 		if (!member.user.bot) {
 			let existingInfo = await membersDB.findById(member.id).exec()
@@ -41,12 +37,6 @@ async function regularUpdate() {
 	
 	restartInterval()
 	console.log('Auto update complete')
-}
-
-export function restartInterval() {
-	lastUpdated = Date.now()
-	clearTimeout(currentInterval)
-	currentInterval = setTimeout(regularUpdate, 14400000)
 }
 
 client.once('ready', async () => { regularUpdate() })

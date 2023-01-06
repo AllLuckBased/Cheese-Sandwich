@@ -1,6 +1,5 @@
 import { SlashCommandBuilder } from '@discordjs/builders'
 
-import config from '../config.js'
 import { updateMember } from './update.js'
 import membersDB from '../models/Member.js'
 import { getProfileEmbed, getRatings } from './profile.js'
@@ -11,9 +10,10 @@ export const data = new SlashCommandBuilder()
 	.addStringOption(option => option.setName('website')
 		.setDescription('The website which you want to unlink.')
 		.setRequired(false)
-		.addChoice('lichess', 'lichess')
-		.addChoice('chesscom', 'chesscom')
-	)
+		.addChoices(
+            {name: 'lichess', value: 'lichess'},
+		    {name: 'chesscom', value: 'chesscom'}
+    ))
 export async function execute(interaction) {
     await interaction.deferReply()
 

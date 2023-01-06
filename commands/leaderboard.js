@@ -1,8 +1,8 @@
-import { MessageEmbed } from 'discord.js'
+import { EmbedBuilder } from 'discord.js'
 import { SlashCommandBuilder } from '@discordjs/builders'
 
 import membersDB from '../models/Member.js'
-import { getLastUpdated } from '../index.js'
+import { lastUpdated } from './update-leaderboard.js'
 
 export const data = new SlashCommandBuilder()
 	.setName('leaderboard')
@@ -16,7 +16,7 @@ export async function execute(interaction) {
     let page = interaction.options.getInteger('page')
     if(page == null) page = 1
     
-    const embed = new MessageEmbed()
+    const embed = new EmbedBuilder()
     embed.setTitle(`Leaderboard:\nPage - ${page}`)
     if(page < 1) {
         embed.setDescription("Error: page ∉ ℕ")
@@ -32,19 +32,19 @@ export async function execute(interaction) {
     else {
         for(let i=0; i<leaderboard.length; i++) {
             const member = await interaction.guild.members.fetch(String(leaderboard[i]._id))
-            embed.addField(`#${10*(page-1) + (i+1)}`, `${member.displayName} - ${leaderboard[i].serverRating}`, false)
+            embed.addFields({ name: `#${10*(page-1) + (i+1)}`, value: `${member.displayName} - ${leaderboard[i].serverRating}`, inline: false })
         }
     }
-    if(getLastUpdated() != null) {
-        let timeValue = Math.round((Date.now() - getLastUpdated())/1000)
+    if(lastUpdated != null) {
+        let timeValue = Math.round((Date.now() - lastUpdated)/1000)
         if(timeValue >= 60) {
             timeValue = Math.round(timeValue/60)
             if(timeValue > 60) {
                 timeValue = Math.round(timeValue/60)
-                embed.setFooter(`Last Updated: ${timeValue} hour(s) ago`)
-            } else embed.setFooter(`Last Updated: ${timeValue} minute(s) ago`)
-        } else embed.setFooter(`Last Updated: ${timeValue} second(s) ago`)
-    } else embed.setFooter(`Last Updated: ???`)
+                embed.setFooter({ text: `Last Updated: ${timeValue} hour(s) ago` })
+            } else embed.setFooter({ text: `Last Updated: ${timeValue} minute(s) ago` })
+        } else embed.setFooter({ text: `Last Updated: ${timeValue} second(s) ago` })
+    } else embed.setFooter({ text: `Last Updated: ???` })
     await interaction.editReply({embeds: [embed]})
 }
 

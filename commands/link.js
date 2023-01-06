@@ -1,5 +1,5 @@
 import fetch from 'node-fetch'
-import { MessageEmbed } from 'discord.js'
+import { EmbedBuilder } from 'discord.js'
 import { SlashCommandBuilder } from '@discordjs/builders'
 
 import config from '../config.js'
@@ -13,9 +13,10 @@ export const data = new SlashCommandBuilder()
 	.addStringOption(option => option.setName('website')
 		.setDescription('The website where you have the chess account.')
 		.setRequired(true)
-		.addChoice('lichess', 'lichess')
-		.addChoice('chesscom', 'chesscom')
-	)
+		.addChoices(
+            {name: 'lichess', value: 'lichess'},
+		    {name: 'chesscom', value: 'chesscom'}
+    ))
 	.addStringOption(option => option.setName('username')
 		.setDescription('Your username on that particular website.')
 		.setRequired(true)
@@ -44,12 +45,12 @@ export async function execute(interaction) {
 
 export async function lichess(interaction, existingInfo, username) {
 	const getVerifyOwnershipEmbed = function() {
-		const embed = new MessageEmbed()
+		const embed = new EmbedBuilder()
 		embed.setTitle('Additional verification steps required.')
 		embed.setDescription(`In your lichess profile, please paste your Discord tag ${interaction.user.tag} \
 		into the Location field temporarily to verify you have ownership of the account and re-run the command.\
 		After linking your account, you can revert your Location back to any value.`)
-		embed.addField('You can set your chess.com Location here:', 'https://lichess.org/account/profile')
+		embed.addFields({ name: 'You can set your chess.com Location here:', value: 'https://lichess.org/account/profile' })
 		embed.setImage('https://i.imgur.com/YwoptCk.png')
 		return embed
 	}
@@ -87,12 +88,12 @@ export async function lichess(interaction, existingInfo, username) {
 
 export async function chesscom(interaction, existingInfo, username) {
 	const getVerifyOwnershipEmbed = function() {
-		const embed = new MessageEmbed()
+		const embed = new EmbedBuilder()
 		embed.setTitle('Additional verification steps required.')
 		embed.setDescription(`In your chess.com profile, please paste your Discord tag ${interaction.user.tag} \
 		into the Location field temporarily to verify you have ownership of the account and re-run the command.\
 		After linking your account, you can revert your Location back to any value.`)
-		embed.addField('You can set your chess.com Location here:', 'https://www.chess.com/settings')
+		embed.addFields({ name: 'You can set your chess.com Location here:', value: 'https://www.chess.com/settings' })
 		embed.setImage('https://i.imgur.com/IoAWrk4.png')
 		return embed
 	}

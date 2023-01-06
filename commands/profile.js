@@ -1,5 +1,5 @@
 import fetch from 'node-fetch'
-import { MessageEmbed } from 'discord.js'
+import { EmbedBuilder } from 'discord.js'
 import { SlashCommandBuilder } from '@discordjs/builders'
 
 import membersDB from '../models/Member.js'
@@ -122,21 +122,19 @@ export async function getRatings(lichessId, chesscomId) {
 } 
 
 export async function getProfileEmbed(header, member, existingInfo, ratings) {
-    const embed = new MessageEmbed()
+    const embed = new EmbedBuilder()
     if(ratings == undefined) {
-        embed.setAuthor("Error")    
+        embed.setAuthor({ name: "Error" })    
         embed.setDescription("Could not fetch ratings due to bad response from lichess/chesscom servers!")
         return embed
     }
     embed.setThumbnail(member.user.displayAvatarURL())
 
     if(existingInfo.lichessId == undefined && existingInfo.chesscomId == undefined) {
-        embed.setAuthor("No account found!")    
+        embed.setAuthor({ name: "No account found!" })    
         embed.setDescription("User has not linked any account on this server. Use /link to link an account.")
         return embed
     }
-
-    embed.setAuthor(header)
 
     let title = `${member.user.tag} \nRating: ${ratings[0] == undefined? '??' : ratings[0]}`
     if(ratings[0] != undefined && existingInfo.serverRank == undefined) existingInfo.serverRank = await getApproxRank(existingInfo)
@@ -144,24 +142,30 @@ export async function getProfileEmbed(header, member, existingInfo, ratings) {
     embed.setTitle(title)
 
     if(existingInfo.lichessId != undefined) {
-        embed.addField('Lichess.org:horse:', `https://lichess.org/@/${existingInfo.lichessId} :white_check_mark:`)
-        embed.addField('Bullet:boom:', `${ratings[1]}`, true)
-        embed.addField('Blitz:zap:', `${ratings[2]}`, true)
-        embed.addField('Rapid:stopwatch:', `${ratings[3]}`, true)
+        embed.addFields(
+            { name: 'Lichess.org:horse:', value: `https://lichess.org/@/${existingInfo.lichessId} :white_check_mark:` },
+            { name: 'Bullet:boom:', value: `${ratings[1]}`, inline: true },
+            { name: 'Blitz:zap:', value: `${ratings[2]}`, inline: true },
+            { name: 'Rapid:stopwatch:', value: `${ratings[3]}`, inline: true },
+        )
     }
 
     if(existingInfo.chesscomId != undefined) {
-        embed.addField('Chess.com:chess_pawn:', `https://chess.com/member/${existingInfo.chesscomId} :white_check_mark:`)
-        embed.addField('Bullet:boom:', `${ratings[4]}`, true)
-        embed.addField('Blitz:zap:', `${ratings[5]}`, true)
-        embed.addField('Rapid:stopwatch:', `${ratings[6]}`, true)
+        embed.addFields(
+            { name: 'Chess.com:chess_pawn:', value: `https://chess.com/member/${existingInfo.chesscomId} :white_check_mark:` },
+            { name: 'Bullet:boom:', value: `${ratings[4]}`, inline: true },
+            { name: 'Blitz:zap:', value: `${ratings[5]}`, inline: true },
+            { name: 'Rapid:stopwatch:', value: `${ratings[6]}`, inline: true },
+        )
     }
 
-    embed.setFooter(`For a rating at a time control to be eligible, both conditions must be true:
+    embed.setFooter({text: 
+        `For a rating at a time control to be eligible, both conditions must be true:
         - The rating must be non-provisional. (On Lichess, there must not be a ? after your rating.)
         - At least 20 rated games must have been completed at that time control.
-    Main rating is calculated as the highest of blitz and rapid ratings across lichess.org and chess.com
-    A linear formula is used to calculate a comparable Lichess rating from a Chess.com rating: Chess.com rating × 0.75 + 650 = Lichess.org rating equivalent.`)
-
+        Main rating is calculated as the highest of blitz and rapid ratings across lichess.org and chess.com
+        A linear formula is used to calculate a comparable Lichess rating from a Chess.com rating: Chess.com rating × 0.75 + 650 = Lichess.org rating equivalent.`
+    })
+    
     return embed
 }

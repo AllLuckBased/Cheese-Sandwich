@@ -1,7 +1,6 @@
 import fetch from 'node-fetch'
 import { SlashCommandBuilder } from '@discordjs/builders'
 
-import config from '../config.js'
 import membersDB from '../models/Member.js'
 import { getProfileEmbed } from './profile.js'
 import { updateMember } from './update.js'
@@ -9,13 +8,14 @@ import { updateMember } from './update.js'
 export const data = new SlashCommandBuilder()
 	.setName('admin-link')
 	.setDescription('Links account without location checks.')
-    .setDefaultPermission(false)
+    .setDefaultMemberPermissions(0)
 	.addStringOption(option => option.setName('website')
 		.setDescription('The website of the chess account.')
 		.setRequired(true)
-		.addChoice('lichess', 'lichess')
-		.addChoice('chesscom', 'chesscom')
-	)
+		.addChoices(
+            {name: 'lichess', value: 'lichess'},
+		    {name: 'chesscom', value: 'chesscom'}
+    ))
 	.addStringOption(option => option.setName('username')
 		.setDescription('Your username on that particular website.')
 		.setRequired(true)
@@ -24,20 +24,7 @@ export const data = new SlashCommandBuilder()
         .setDescription('The user whose account is being linked.')
         .setRequired(true)
     )
-export const getPerms = client => {
-    return [
-        {
-            id: client.guilds.cache.get(config.guildId).ownerId,
-            type: 'USER',
-            permission: true,
-        },
-        {
-            id: (client.guilds.cache.get(config.guildId).roles.cache.find(r => r.name == 'Admin')).id.toString(),
-            type: 'ROLE',
-            permission: true,
-        },
-    ]
-}
+
 export async function execute(interaction) {
     await interaction.deferReply()
     const website = interaction.options.getString('website')
@@ -68,7 +55,7 @@ export async function execute(interaction) {
         }
 
         userData = await userData.json()
-        if(existingInfo.lichessId != undefined && existingInfo.prevLichess.indexOf(lichessId) > -1) 
+        if(existingInfo.lichessId != undefined && existingInfo.prevLichess.indexOf(username) > -1) 
             existingInfo.prevLichess.push(existingInfo.lichessId)
         existingInfo.lichessId = username
         
@@ -86,7 +73,7 @@ export async function execute(interaction) {
 
         userData = await userData.json()
 
-        if(existingInfo.chesscomId != undefined && existingInfo.prevChesscom.indexOf(chesscomId) > -1) 
+        if(existingInfo.chesscomId != undefined && existingInfo.prevChesscom.indexOf(username) > -1) 
             existingInfo.prevChesscom.push(existingInfo.chesscomId)
         existingInfo.chesscomId = username
         
